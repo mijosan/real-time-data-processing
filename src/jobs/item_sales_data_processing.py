@@ -2,11 +2,6 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import col, from_json, window, sum as spark_sum, to_json, struct, from_csv, to_timestamp, concat, lit
 from pyspark.sql.types import StructType, StringType, IntegerType, DoubleType, StructField
 
-def create_spark_session():
-    return SparkSession.builder \
-        .appName("KafkaSalesProcessing") \
-        .getOrCreate()
-
 def process_item_sales_data(spark, item_sales_data_df: DataFrame, item_master_data_df: DataFrame):
     joined_item_sales_data_df = item_sales_data_df.join(
         item_master_data_df,  # 조인할 다른 DataFrame
@@ -86,7 +81,10 @@ def analyze_item_sales_data_statistics(processed_sales_data_df):
     return sales_data_statistics_df
 
 def main():
-    spark = create_spark_session()
+    # 스파크 세션 생성
+    spark = (SparkSession.builder 
+        .appName("KafkaSalesProcessing")
+        .getOrCreate())
     
     # 마스터 데이터 스키마 정의
     item_master_data_schema = StructType([
