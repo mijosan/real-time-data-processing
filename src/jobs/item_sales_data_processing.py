@@ -43,42 +43,32 @@ def process_item_sales_data(spark, item_sales_data_df: DataFrame, item_master_da
     
     return processed_sales_data_df
 
-def analyze_item_sales_data_statistics(processed_sales_data_df):
-    """
-    10분 간격의 윈도우와 5분 슬라이딩 간격을 사용하여 제품별 판매금액을 집계합니다.
-
-    Args:
-        processed_sales_data_df (DataFrame): 전처리된 판매 데이터 DataFrame.
-
-    Returns:
-        DataFrame: 윈도우별, 제품별 판매금액 통계 DataFrame.
-    """
-    sales_data_statistics_df = (processed_sales_data_df
-        .withWatermark("sales_datetime", "15 minutes")  # 지연 허용 시간 설정
-        .groupBy(
-            window(col("sales_datetime"), "10 minutes", "5 minutes"),  # 10분 윈도우, 5분 슬라이드
-            col("item_code"),
-            col("item_name"),
-            col("category_code"),
-            col("category_name")
-        )
-        .agg(
-            spark_sum("sales_amount").alias("total_sales_amount"),
-            spark_sum("sales_quantity").alias("total_sales_quantity")
-        )
-        .select(
-            col("window.start").alias("window_start"),
-            col("window.end").alias("window_end"),
-            col("item_code"),
-            col("item_name"),
-            col("category_code"),
-            col("category_name"),
-            col("total_sales_amount"),
-            col("total_sales_quantity")
-        )
-        .orderBy(col("window_start").asc()))
+sales_data_statistics_df = (processed_sales_data_df
+    .withWatermark("sales_datetime", "15 minutes")  # 지연 허용 시간 설정
+    .groupBy(
+        window(processed_sales_data_df["sales_datetime"], "10 minutes", "5 minutes"),  # 10분 윈도우, 5분 슬라이드
+        processed_sales_data_df["item_code"],
+        processed_sales_data_df["item_name"],
+        processed_sales_data_df["category_code"],
+        processed_sales_data_df["category_name"]
+    )
+    .agg(
+        spark_sum(processed_sales_data_df["sales_amount"]).alias("total_sales_amount"),
+        spark_sum(processed_sales_data_df["sales_quantity"]).alias("total_sales_quantity")
+    )
+    .select(
+        processed_sales_data_df["window.start"].alias("window_start"),
+        processed_sales_data_df["window.end"].alias("window_end"),
+        processed_sales_data_df["item_code"],
+        processed_sales_data_df["item_name"],
+        processed_sales_data_df["category_code"],
+        processed_sales_data_df["category_name"],
+        processed_sales_data_df["total_sales_amount"],
+        processed_sales_data_df["total_sales_quantity"]
+    )
+    .orderBy(processed_sales_data_df["window_start"].asc()))
     
-    return sales_data_statistics_df
+return sales_data_statistics_df
 
 def main():
     # 스파크 세션 생성
