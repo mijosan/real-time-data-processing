@@ -68,7 +68,7 @@ sales_data_statistics_df = (processed_sales_data_df
     )
     .orderBy(processed_sales_data_df["window_start"].asc()))
     
-return sales_data_statistics_df
+    return sales_data_statistics_df
 
 def main():
     # 스파크 세션 생성
